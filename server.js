@@ -26,14 +26,14 @@ connection.once('open', () => {
 
 // routing
 const registerRouter = require('./routes/register.router');
-const loginRouter = require('./routes/login.router');
+const authRouter = require('./routes/auth.router');
 const logoutRouter = require('./routes/logout.router');
 const refreshTokenRouter = require('./routes/refreshToken.router');
 
-app.use('/register', registerRouter);
-app.use('/login', loginRouter);
-app.use('/refresh', refreshTokenRouter);
-app.use('/logout', logoutRouter);
+app.use('/api/register', registerRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/refresh', refreshTokenRouter);
+app.use('/api/logout', logoutRouter);
 
 // server host
 const port = process.env.PORT;
