@@ -1,6 +1,7 @@
 const JWT = require('jsonwebtoken');
-var User = require('../models/user.model');
 require('dotenv').config();
+var User = require('../models/user.model');
+const streamServer = require('../stream');
 
 const handleRefreshToken = async (req, res) => {
 
@@ -22,7 +23,7 @@ const handleRefreshToken = async (req, res) => {
 
     // evaluate jwt 
     JWT.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET,
-        (err, decoded) => {
+        async (err, decoded) => {
             if (err || existingUser.username !== decoded.UserInfo.username)
                 return res.status(403).send("Error verifying jwt || Token maybe expired");
 
@@ -42,8 +43,11 @@ const handleRefreshToken = async (req, res) => {
                 { expiresIn: '8h' }
             );
 
+            // get user's stream token
+            const streamToken = await streamServer.createToken(username);
+
             return res.status(200).json({
-                username, fullname, email, accessToken: newAccessToken
+                username, fullname, email, accessToken: newAccessToken, streamToken
             });
         }
     );
