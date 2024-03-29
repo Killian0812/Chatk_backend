@@ -21,7 +21,7 @@ const verifyJWT = (req, res, next) => {
                 return res.status(403).send("Error verifying JWTs");
             }
             req.username = decoded.UserInfo.username;
-            req.roles = decoded.UserInfo.roles;
+            req.userId = decoded.UserInfo.userId;
             console.log("JWT Verified");
             next();
         }
