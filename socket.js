@@ -23,32 +23,45 @@ io.on("connection", (socket) => {
 
     if (username) {
         console.log(`Created socket connection for ${username}: ${socket.id}`);
-        userSocketMap[username] = socket.id;
+        userSocketMap[username] = userSocketMap[username] || [];
+        userSocketMap[username].push(socket.id);
 
         socket.on("calling", (data) => {
             console.log(data);
 
             const memberIds = JSON.parse(data.memberIds);
-            const memberSocketIds = memberIds.map(memberId => userSocketMap[memberId]);
-            memberSocketIds.forEach(memberSocketId => {
-                if (memberSocketId && memberSocketId !== socket.id) {
-                    io.to(memberSocketId).emit("someone_calling", {
-                        caller: username,
-                        callType: data.callType,
-                        isGroup: data.isGroup,
-                        name: data.name,
-                        image: data.image,
-                        callId: data.callId
-                    });
-                    console.log(`Ringing call to ${memberSocketId}`);
+            const calledMembers = {};
+
+            memberIds.forEach(memberId => {
+                if (userSocketMap[memberId] && userSocketMap[memberId].length > 0) {
+                    const memberSocketId = userSocketMap[memberId][0];
+                    if (memberSocketId !== socket.id && !calledMembers[memberSocketId]) {
+                        io.to(memberSocketId).emit("someone_calling", {
+                            caller: username,
+                            callType: data.callType,
+                            isGroup: data.isGroup,
+                            name: data.name,
+                            image: data.image,
+                            callId: data.callId
+                        });
+                        console.log(`Ringing call to ${memberSocketId}`);
+                        calledMembers[memberSocketId] = true;
+                    }
                 }
             });
-        })
+        });
 
         socket.on("disconnect", () => {
             console.log(`${username} disconnected: ${socket.id}`);
-            if (socket.id === userSocketMap[username])
-                delete userSocketMap[username];
+            if (userSocketMap[username]) {
+                const index = userSocketMap[username].indexOf(socket.id);
+                if (index !== -1) {
+                    userSocketMap[username].splice(index, 1);
+                    if (userSocketMap[username].length === 0) {
+                        delete userSocketMap[username];
+                    }
+                }
+            }
         });
     }
 });
