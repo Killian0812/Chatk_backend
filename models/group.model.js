@@ -9,6 +9,8 @@ const groupSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    filename: String,
+    cid: String,
     owner: {
         type: mongoose.Schema.Types.ObjectId
     },
