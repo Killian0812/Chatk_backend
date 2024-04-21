@@ -5,19 +5,19 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    email: {
+        type: String,
+        required: true
+    },
+    fullname: {
+        type: String,
+        required: false
+    },
     password: {
         type: String,
         required: true
     },
-    roles: {
-        type: [String],
-        default: ["USER"]
-    },
-    active: {
-        type: Boolean,
-        default: true
-    },
-    refreshToken: String
+    refreshToken: String,
 })
 
 module.exports = mongoose.model('User', userSchema)
