@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: false
     },
+    filename: String,
     image: {
         type: String,
         required: false
