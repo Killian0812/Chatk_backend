@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 var User = require('../models/user.model');
 const gmailService = require('../services/gmail.service');
 const streamServer = require('../stream');
@@ -60,13 +61,13 @@ const handleLogin = async (req, res) => {
                     console.log(error);
                 }
 
-                console.log("Login successful");
-
-                // sent refresh token as http cookie, last for 1d
+                // send refresh token as http cookie, last for 1d
                 res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
 
                 // get user's stream token
                 const streamToken = await streamServer.createToken(existingUser.username);
+
+                console.log("Login successful");
 
                 res.status(200).json({
                     accessToken: accessToken,
@@ -181,4 +182,85 @@ const handleVerifyToken = async (req, res) => {
     }
 };
 
-module.exports = { handleLogin, handleForget, handleRecover, handleVerifyToken };
+const handleGoogleLogin = async (req, res) => {
+
+    const { email, name, picture } = req.body;
+
+    console.log("Login with google");
+
+    try {
+        // Check duplication
+        let user = await User.findOne({ email });
+        if (!user) {
+            // If user doesn't exist, create a new user
+            const username = name.replace(/\s/g, "") + uuidv4().substring(0, 5);
+            const password = uuidv4();
+
+            // Hash the generated password
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(password, salt);
+
+            // Create and save the new user
+            user = new User({
+                username,
+                email,
+                fullname: name,
+                password: hashedPassword,
+                image: picture,
+            });
+        }
+
+        // create JWTs
+        const accessToken = JWT.sign(
+            {
+                "UserInfo": {
+                    "username": user.username,
+                    "userId": user._id,
+                    "email": user.email,
+                    "fullname": user.fullname,
+                }
+            },
+            process.env.ACCESS_TOKEN_SECRET,
+            { expiresIn: '8h' }
+        );
+        const refreshToken = JWT.sign(
+            {
+                "UserInfo": {
+                    "username": user.username,
+                    "userId": user._id,
+                    "email": user.email,
+                    "fullname": user.fullname
+                }
+            },
+            process.env.REFRESH_TOKEN_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        // Save refresh token with current user
+        user.refreshToken = refreshToken;
+        await user.save();
+
+        // send refresh token as http cookie, last for 1d
+        res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+
+        // Get user's stream token
+        const streamToken = await streamServer.createToken(user.username);
+
+        console.log("Login with google successful");
+
+        res.status(200).json({
+            accessToken: accessToken,
+            fullname: user.fullname,
+            userId: user._id,
+            email: user.email,
+            username: user.username,
+            image: user.image || `https://getstream.io/random_png/?name=${user.username}`,
+            streamToken: streamToken
+        });
+    } catch (error) {
+        console.error("Error login with Google:", error);
+        res.status(500).json("Error login with Google");
+    }
+};
+
+module.exports = { handleLogin, handleForget, handleRecover, handleVerifyToken, handleGoogleLogin };
