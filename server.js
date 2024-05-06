@@ -40,6 +40,6 @@ const port = process.env.PORT;
 const ip = process.env.IP;
 
 app.listen(port, ip, () => {
-    console.log("Server is running at " + port);
+    console.log(`Server is running at ${ip}:${port}`);
 })
 

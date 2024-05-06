@@ -1,10 +1,9 @@
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
+const { FirebaseStorage } = require('../firebase');
+const bucket = FirebaseStorage.bucket();
 var User = require('../models/user.model');
-const { StreamChat } = require('stream-chat');
-const api_key = 'j6cg6c93cpmj';
-const api_secret = 'z9dever7sxqhrfhaus8r5x3zprn9em8hsa7nmvjzhzahccpnrcczkcjpgts23j62';
-const serverClient = StreamChat.getInstance(api_key, api_secret);
+const streamServer = require('../stream');
 
 const handleLogin = async (req, res) => {
     const username = req.body.username;
@@ -25,7 +24,8 @@ const handleLogin = async (req, res) => {
                     {
                         "UserInfo": {
                             "username": existingUser.username,
-                            "email": existingUser.email
+                            "email": existingUser.email,
+                            "fullname": existingUser.fullname,
                         }
                     },
                     process.env.ACCESS_TOKEN_SECRET,
@@ -35,7 +35,8 @@ const handleLogin = async (req, res) => {
                     {
                         "UserInfo": {
                             "username": existingUser.username,
-                            "email": existingUser.email
+                            "email": existingUser.email,
+                            "fullname": existingUser.fullname
                         }
                     },
                     process.env.REFRESH_TOKEN_SECRET,
@@ -52,11 +53,19 @@ const handleLogin = async (req, res) => {
                 }
 
                 console.log("Login successful");
+
                 // sent refresh token as http cookie, last for 1d
                 res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+
+                // get user's stream token
+                const streamToken = await streamServer.createToken(username);
+
                 res.status(200).json({
-                    accessToken, fullname: existingUser.fullname,
-                    email: existingUser.email, username: existingUser.username
+                    accessToken: accessToken, 
+                    fullname: existingUser.fullname,
+                    email: existingUser.email, 
+                    username: existingUser.username,
+                    streamToken: streamToken
                 });
             }
             else {
@@ -68,19 +77,4 @@ const handleLogin = async (req, res) => {
     }
 }
 
-const handleGetStreamToken = async (req, res) => {
-    const userId = req.body.userId;
-    // console.log(userId);
-    try {
-        const token = await serverClient.createToken(userId);
-        // console.log(token);
-        res.status(200).json({
-            payload: token,
-        });
-    } catch (error) {
-        console.log(error);
-        res.sendStatus(400);
-    }
-}
-
-module.exports = { handleLogin, handleGetStreamToken };
+module.exports = { handleLogin };
