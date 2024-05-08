@@ -29,11 +29,15 @@ const registerRouter = require('./routes/register.router');
 const authRouter = require('./routes/auth.router');
 const logoutRouter = require('./routes/logout.router');
 const refreshTokenRouter = require('./routes/refreshToken.router');
+const groupRouter = require('./routes/group.router');
+
+const verifyJWT = require('./middlewares/verifyJWT');
 
 app.use('/api/register', registerRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/refresh', refreshTokenRouter);
 app.use('/api/logout', logoutRouter);
+app.use('/api/group', verifyJWT, groupRouter);
 
 // server host
 const port = process.env.PORT;

@@ -28,6 +28,7 @@ const handleRefreshToken = async (req, res) => {
                 return res.status(403).send("Error verifying jwt || Token maybe expired");
 
             const username = existingUser.username;
+            const userId = existingUser._id;
             const fullname = existingUser.fullname;
             const email = existingUser.email;
 
@@ -35,6 +36,7 @@ const handleRefreshToken = async (req, res) => {
                 {
                     "UserInfo": {
                         "username": username,
+                        "userId": userId,
                         "email": email,
                         "fullname": fullname,
                     }
@@ -47,7 +49,7 @@ const handleRefreshToken = async (req, res) => {
             const streamToken = await streamServer.createToken(username);
 
             return res.status(200).json({
-                username, fullname, email, accessToken: newAccessToken, streamToken
+                username, userId, fullname, email, accessToken: newAccessToken, streamToken
             });
         }
     );
