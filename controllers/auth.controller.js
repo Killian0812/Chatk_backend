@@ -1,7 +1,5 @@
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
-const { FirebaseStorage } = require('../firebase');
-const bucket = FirebaseStorage.bucket();
 var User = require('../models/user.model');
 const streamServer = require('../stream');
 
@@ -24,6 +22,7 @@ const handleLogin = async (req, res) => {
                     {
                         "UserInfo": {
                             "username": existingUser.username,
+                            "userId": existingUser._id,
                             "email": existingUser.email,
                             "fullname": existingUser.fullname,
                         }
@@ -35,6 +34,7 @@ const handleLogin = async (req, res) => {
                     {
                         "UserInfo": {
                             "username": existingUser.username,
+                            "userId": existingUser._id,
                             "email": existingUser.email,
                             "fullname": existingUser.fullname
                         }
@@ -61,9 +61,10 @@ const handleLogin = async (req, res) => {
                 const streamToken = await streamServer.createToken(username);
 
                 res.status(200).json({
-                    accessToken: accessToken, 
+                    accessToken: accessToken,
                     fullname: existingUser.fullname,
-                    email: existingUser.email, 
+                    userId: existingUser._id,
+                    email: existingUser.email,
                     username: existingUser.username,
                     streamToken: streamToken
                 });

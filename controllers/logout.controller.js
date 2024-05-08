@@ -1,7 +1,5 @@
 var User = require('../models/user.model');
 
-require('dotenv').config();
-
 const handleLogout = async (req, res) => {
 
     console.log("Someone loging out");
