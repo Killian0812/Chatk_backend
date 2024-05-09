@@ -9,7 +9,9 @@ require('dotenv').config();
 const app = express();
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(cors());
+app.use(cors({
+    origin: 'https://localhost:3000'
+}));
 
 // middlewares
 app.use(express.json());
@@ -30,6 +32,7 @@ const authRouter = require('./routes/auth.router');
 const logoutRouter = require('./routes/logout.router');
 const refreshTokenRouter = require('./routes/refreshToken.router');
 const groupRouter = require('./routes/group.router');
+const callRouter = require('./routes/call.router');
 
 const verifyJWT = require('./middlewares/verifyJWT');
 
@@ -38,6 +41,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/refresh', refreshTokenRouter);
 app.use('/api/logout', logoutRouter);
 app.use('/api/group', verifyJWT, groupRouter);
+app.use('/api/call', verifyJWT, callRouter);
 
 // server host
 const port = process.env.PORT;
