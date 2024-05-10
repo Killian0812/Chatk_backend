@@ -34,6 +34,7 @@ io.on("connection", (socket) => {
                 if (memberSocketId && memberSocketId !== socket.id) {
                     io.to(memberSocketId).emit("someone_calling", {
                         caller: username,
+                        callType: data.callType,
                         isGroup: data.isGroup,
                         name: data.name,
                         image: data.image,

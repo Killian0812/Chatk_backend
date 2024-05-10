@@ -8,7 +8,6 @@ require('dotenv').config();
 
 const { app, server } = require('./socket');
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(cors({
     origin: 'https://localhost:3000'
 }));
@@ -42,6 +41,22 @@ app.use('/api/refresh', refreshTokenRouter);
 app.use('/api/logout', logoutRouter);
 app.use('/api/group', verifyJWT, groupRouter);
 app.use('/api/call', verifyJWT, callRouter);
+
+const _dirname = path.dirname("")
+const buildPath = path.join(_dirname, "./client/build");
+
+app.use(express.static(buildPath))
+
+app.get(/^\/(?!api).*/, function (req, res) {
+    res.sendFile(
+        path.join(__dirname, "./client/build/index.html"),
+        function (err) {
+            if (err) {
+                res.status(500).send(err);
+            }
+        }
+    );
+})
 
 // server host
 const port = process.env.PORT;
