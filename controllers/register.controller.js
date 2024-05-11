@@ -1,11 +1,13 @@
 const bcrypt = require('bcrypt');
+const JWT = require('jsonwebtoken');
 var User = require('../models/user.model');
+const streamServer = require('../stream');
 
 const handleRegister = async (req, res) => {
     const username = req.body.username;
     const email = req.body.email;
     const password = req.body.password;
-    
+
     let existingUser = await User.findOne({ username });
     if (existingUser) {
         console.log("Username duplicated");
@@ -30,14 +32,50 @@ const handleRegister = async (req, res) => {
                 }
                 else {
                     // console.log('Hashed Password:', hashedPassword);
+                    const refreshToken = JWT.sign(
+                        {
+                            "UserInfo": {
+                                "username": username,
+                                "email": email,
+                            }
+                        },
+                        process.env.REFRESH_TOKEN_SECRET,
+                        { expiresIn: '7d' }
+                    );
 
                     const newUser = new User({
-                        username: username, email: email, password: hashedPassword
+                        username: username, email: email, password: hashedPassword, refreshToken,
+                        image: `https://getstream.io/random_svg/?id=oliver&name=${username}`
                     });
                     newUser.save()
-                        .then(() => {
+                        .then(async () => {
                             console.log("Registered");
-                            return res.status(200).json("Account registered");
+                            const accessToken = JWT.sign(
+                                {
+                                    "UserInfo": {
+                                        "username": newUser.username,
+                                        "userId": newUser._id,
+                                        "email": newUser.email,
+                                    }
+                                },
+                                process.env.ACCESS_TOKEN_SECRET,
+                                { expiresIn: '8h' }
+                            );
+
+                            // sent refresh token as http cookie, last for 1d
+                            res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+
+                            // get user's stream token
+                            const streamToken = await streamServer.createToken(username);
+
+                            return res.status(200).json({
+                                accessToken: accessToken,
+                                userId: newUser._id,
+                                email: newUser.email,
+                                username: newUser.username,
+                                image: newUser.image,
+                                streamToken: streamToken
+                            });
                         })
                         .catch(err => {
                             console.log(err);
