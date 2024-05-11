@@ -25,11 +25,21 @@ const uploadToFirebaseStorage = async (file) => {
     return imageURL;
 }
 
+const deleteFromFirebaseStorage = async (filename) => {
+    try {
+        const fileRef = bucket.file(filename);
+        await fileRef.delete();
+        console.log(`File ${filename} deleted successfully from Firebase`);
+    } catch (error) {
+        console.error('Error deleting file from Firebase:', error);
+    }
+}
+
 const handleFindUser = async (req, res) => {
     const keyword = req.query.keyword;
-    console.log(keyword);
-    console.log(`Finding user: ${keyword}`);
-    const user = await User.findOne({ "username": { $regex: keyword, $options: 'i' } });
+    if (!keyword)
+        return res.sendStatus(400);
+    const user = await User.findOne({ username: keyword });
     return res.status(200).json(user);
 }
 
@@ -65,12 +75,124 @@ const handleCreateGroup = async (req, res) => {
             isGroup: true
         });
         await channel.addMembers([...usernames]); // username as userId
-
-        return res.status(200).json(newGroup);
+        newGroup.cid = channel.cid;
+        await newGroup.save();
+        return res.status(200).json({ ...newGroup._doc, members: users }); // replace members field with populated one
     }).catch((err) => {
         console.log(err);
         return res.sendStatus(500);
     })
 }
 
-module.exports = { handleCreateGroup, handleFindUser }
+const handleEditGroup = async (req, res) => {
+    console.log("editing group");
+
+    let imageURL = null;
+    const image = req.file;
+
+    const group = await Group.findById(req.params.id);
+
+    if (image) {
+        // delete old image in firebase
+        if (group.filename)
+            await deleteFromFirebaseStorage(group.filename);
+
+        // upload to firebase
+        imageURL = await uploadToFirebaseStorage(image);
+    }
+    const members = JSON.parse(req.body?.members);
+    const users = await User.find({ _id: { $in: members } });
+    const usernames = users.map(user => user.username);
+    if (!usernames.includes(req.username))
+        usernames.push(req.username);
+
+    // save to database then update stream channel
+    const oldName = group.groupName;
+    group.groupName = req.body.groupName;
+    if (imageURL)
+        group.image = imageURL;
+    group.members = members
+    group.save().then(async () => {
+        const cid = group.cid;
+        const filter = { cid: { $eq: cid } };
+        const channel = (await streamServer.queryChannels(filter))[0];
+        const oldMembers = Object.keys(channel.state.members);
+        const removeMembers = oldMembers.filter(member => !usernames.includes(member));
+        const newMembers = usernames.filter(member => !oldMembers.includes(member));
+        if (oldName !== req.body.groupName)
+            await channel.update({
+                image: group.image,   // keep all field because this is overwrite update
+                name: req.body.groupName,
+                isGroup: true
+            }, {
+                text: `${req.username} changed group title to ${req.body.groupName}`,
+                user_id: `${req.username}`
+            });
+        if (imageURL)
+            await channel.update({
+                image: group.image,
+                name: req.body.groupName,
+                isGroup: true
+            }, {
+                text: `${req.username} changed group image`,
+                user_id: `${req.username}`
+            });
+        if (removeMembers.length) {
+            const removedNames = removeMembers.join(', ');
+            await channel.removeMembers(removeMembers);
+            const text = `${req.username} removed ${removedNames} from the group`;
+            const message = {
+                text,
+                user_id: req.username,
+                type: 'system'
+            };
+            await channel.sendMessage(message);
+        }
+        if (newMembers.length) {
+            const newNames = newMembers.join(', ');
+            await channel.addMembers(newMembers);
+            const text = `${req.username} added ${newNames} to the group`;
+            const message = {
+                text,
+                user_id: req.username,
+                type: 'system'
+            };
+            await channel.sendMessage(message);
+        }
+        return res.status(200).json({ ...group._doc, members: users }); // replace members field with populated one
+    }).catch((err) => {
+        console.log(err);
+        return res.sendStatus(500);
+    })
+}
+
+const handleGetGroups = async (req, res) => {
+    console.log("getting owned group");
+
+    try {
+        const groups = await Group.find({ owner: req.userId }).populate('members');
+        return res.status(200).json(groups);
+    } catch (error) {
+        return res.sendStatus(500);
+    }
+}
+
+const handleDeleteGroup = async (req, res) => {
+    const cid = req.params.cid;
+    console.log(`owner deleting ${cid}`);
+    const deletedGroup = await Group.findOneAndDelete({ cid: cid });
+    if (deletedGroup) {
+        try {
+            await streamServer.deleteChannels([cid], { hard_delete: true });
+            return res.sendStatus(200);
+        } catch (e) {
+            if (e.code !== 16) {
+                return res.sendStatus(500);
+            }
+            return res.sendStatus(200);
+        }
+    }
+    return res.sendStatus(500);
+}
+
+module.exports = { handleEditGroup, handleCreateGroup, handleFindUser, handleGetGroups, handleDeleteGroup }
