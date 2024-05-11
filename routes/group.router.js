@@ -7,6 +7,12 @@ const groupController = require('../controllers/group.controller');
 
 router.post('/create', upload.single('image'), groupController.handleCreateGroup)
 
+router.put('/edit/:id', upload.single('image'), groupController.handleEditGroup)
+
 router.get('/findUser', groupController.handleFindUser)
+
+router.get('/owned', groupController.handleGetGroups)
+
+router.delete('/:cid', groupController.handleDeleteGroup)
 
 module.exports = router;
