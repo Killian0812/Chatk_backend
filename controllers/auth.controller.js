@@ -55,7 +55,7 @@ const handleLogin = async (req, res) => {
                 console.log("Login successful");
 
                 // sent refresh token as http cookie, last for 1d
-                res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+                res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'Strict', secure: true, maxAge: 24 * 60 * 60 * 1000 });
 
                 // get user's stream token
                 const streamToken = await streamServer.createToken(username);

@@ -14,7 +14,7 @@ const handleLogout = async (req, res) => {
     if (!existingUser) // ok if no user with specified token
     {
         // but still need to clear jwt cookies on client side
-        res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+        res.clearCookie('jwt', { httpOnly: true, sameSite: 'Strict', secure: true, maxAge: 24 * 60 * 60 * 1000 });
         return res.sendStatus(204);
     } else { // if user exists
         try {
@@ -23,7 +23,7 @@ const handleLogout = async (req, res) => {
         } catch (error) {
             return res.status(500).send("Error removing user's refresh token");
         }
-        res.clearCookie('jwt', { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+        res.clearCookie('jwt', { httpOnly: true, sameSite: 'Strict', secure: true, maxAge: 24 * 60 * 60 * 1000 });
         return res.status(204).send("User's refresh token removed");
     }
 }
