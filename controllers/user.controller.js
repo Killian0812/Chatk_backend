@@ -57,7 +57,7 @@ const handleEditInfo = async (req, res) => {
 
             if (email) {
                 const exist = await User.findOne({ email: email });
-                if (exist?.username !== req.username)
+                if (exist && exist.username !== req.username)
                     return res.status(401).json('Email taken')
 
                 user.email = email.trim();

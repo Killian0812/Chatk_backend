@@ -1,5 +1,3 @@
-require('dotenv').config();
-
 const verifyRole = (...allowedRoles) => {
     return (req, res, next) => {
         console.log("verifying role");
