@@ -177,6 +177,32 @@ const handleGetGroups = async (req, res) => {
     }
 }
 
+const handleLeaveGroup = async (req, res) => {
+    const cid = req.params.cid;
+    console.log(`participant leaving ${cid}`);
+    try {
+        const filter = { cid: { $eq: cid } };
+        const channel = (await streamServer.queryChannels(filter))[0];
+        const text = `${req.username} has left the group`;
+        const message = {
+            text,
+            user_id: req.username,
+            type: 'system'
+        };
+        await channel.sendMessage(message);
+        await channel.removeMembers([req.username]);
+        const group = await Group.findOne({ cid: cid });
+        const members = group.members;
+        newMembers = members.filter(id => id.toString() !== req.userId);
+        group.members = newMembers;
+        await group.save();
+        return res.sendStatus(200);
+    } catch (error) {
+        console.log(error);
+        return res.sendStatus(500);
+    }
+}
+
 const handleDeleteGroup = async (req, res) => {
     const cid = req.params.cid;
     console.log(`owner deleting ${cid}`);
@@ -195,4 +221,4 @@ const handleDeleteGroup = async (req, res) => {
     return res.sendStatus(500);
 }
 
-module.exports = { handleEditGroup, handleCreateGroup, handleFindUser, handleGetGroups, handleDeleteGroup }
+module.exports = { handleEditGroup, handleCreateGroup, handleFindUser, handleGetGroups, handleLeaveGroup, handleDeleteGroup }

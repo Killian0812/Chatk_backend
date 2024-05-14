@@ -32,6 +32,7 @@ const logoutRouter = require('./routes/logout.router');
 const refreshTokenRouter = require('./routes/refreshToken.router');
 const groupRouter = require('./routes/group.router');
 const callRouter = require('./routes/call.router');
+const chatRouter = require('./routes/chat.router');
 
 const verifyJWT = require('./middlewares/verifyJWT');
 
@@ -41,6 +42,7 @@ app.use('/api/refresh', refreshTokenRouter);
 app.use('/api/logout', logoutRouter);
 app.use('/api/group', verifyJWT, groupRouter);
 app.use('/api/call', verifyJWT, callRouter);
+app.use('/api/chat', verifyJWT, chatRouter);
 
 const _dirname = path.dirname("")
 const buildPath = path.join(_dirname, "./client/build");

@@ -13,6 +13,8 @@ router.get('/findUser', groupController.handleFindUser)
 
 router.get('/owned', groupController.handleGetGroups)
 
+router.put('/leave/:cid', groupController.handleLeaveGroup)
+
 router.delete('/:cid', groupController.handleDeleteGroup)
 
 module.exports = router;
