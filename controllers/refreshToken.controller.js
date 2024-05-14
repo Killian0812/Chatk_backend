@@ -1,5 +1,4 @@
 const JWT = require('jsonwebtoken');
-require('dotenv').config();
 var User = require('../models/user.model');
 const streamServer = require('../stream');
 
