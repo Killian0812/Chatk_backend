@@ -1,12 +1,14 @@
-const router = require('express').Router();
-const authController = require('../controllers/auth.controller');
+const router = require("express").Router();
+const authController = require("../controllers/auth.controller");
 
-router.post('/', authController.handleLogin)
+router.post("/", authController.handleLogin);
 
-router.post('/forgot', authController.handleForget)
+router.post("/authGoogle", authController.handleGoogleLogin);
 
-router.post('/recover', authController.handleRecover)
+router.post("/forgot", authController.handleForget);
 
-router.post('/verify', authController.handleVerifyToken)
+router.post("/recover", authController.handleRecover);
+
+router.post("/verify", authController.handleVerifyToken);
 
 module.exports = router;
