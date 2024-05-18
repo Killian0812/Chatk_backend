@@ -62,7 +62,7 @@ const handleLogin = async (req, res) => {
                 }
 
                 // send refresh token as http cookie, last for 1d
-                res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+                res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'Strict', secure: true, maxAge: 24 * 60 * 60 * 1000 });
 
                 // get user's stream token
                 const streamToken = await streamServer.createToken(existingUser.username);
@@ -241,7 +241,7 @@ const handleGoogleLogin = async (req, res) => {
         await user.save();
 
         // send refresh token as http cookie, last for 1d
-        res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'None', secure: true, maxAge: 24 * 60 * 60 * 1000 });
+        res.cookie('jwt', refreshToken, { httpOnly: true, sameSite: 'Strict', secure: true, maxAge: 24 * 60 * 60 * 1000 });
 
         // Get user's stream token
         const streamToken = await streamServer.createToken(user.username);
